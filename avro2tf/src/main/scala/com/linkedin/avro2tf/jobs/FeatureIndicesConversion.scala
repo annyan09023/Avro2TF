@@ -119,7 +119,7 @@ object FeatureIndicesConversion {
   /**
    * Spark UDF function to convert a column of NTVs to a column of SparseVector
    *
-   * @param featureMapping        The mapping of name+term to id
+   * @param featureMapping The mapping of name+term to id
    * @param discardUnknownEntries Whether to discard unknown entries
    * @param filterZeros If it's set true, the constructed sparse vector doesn't have zeros in values
    * @return A Spark udf
