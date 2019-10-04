@@ -10,10 +10,7 @@ import com.linkedin.avro2tf.utils.TestUtil.removeWhiteSpace
 import org.testng.annotations.Test
 import com.linkedin.avro2tf.utils.{IOUtils, TestUtil, WithLocalSparkSession}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.testng.Assert._
-
-import scala.collection.mutable
 
 class PrepRankingDataTest extends WithLocalSparkSession {
 
@@ -120,6 +117,6 @@ class PrepRankingDataTest extends WithLocalSparkSession {
 
     val df = IOUtils.readAvro(session, params.outputDataPath)
     // verify padding is skipped
-    assertTrue(df.select("response").collect().exists(row => row.asInstanceOf[GenericRowWithSchema].get(0).asInstanceOf[mutable.WrappedArray[Float]].size < 10))
+    assertTrue(df.select("response").collect().exists(row => row.getAs[Seq[Float]](0).size < 10))
   }
 }
