@@ -7,11 +7,9 @@ import com.linkedin.avro2tf.parsers.Avro2TFJobParamsParser
 import com.linkedin.avro2tf.utils.ConstantsForTest._
 import com.linkedin.avro2tf.utils.{CommonUtils, IOUtils, TestUtil, TrainingMode, WithLocalSparkSession}
 import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.Row
 import org.testng.Assert._
 import org.testng.annotations.{DataProvider, Test}
-
-import scala.collection.mutable
 
 class Avro2TFTest extends WithLocalSparkSession {
 
@@ -190,7 +188,7 @@ class Avro2TFTest extends WithLocalSparkSession {
     assertTrue(new File(avro2TFTrainingParams.workingDir.tensorMetadataPath).exists())
     assertTrue(new File(avro2TFTrainingParams.workingDir.featureListPath).exists())
 
-    val output = IOUtils.readAvro(session, getAvroFiles(avro2TFTrainingParams.workingDir.trainingDataPath): _*)
+    val output = IOUtils.readAvro(session, avro2TFTrainingParams.workingDir.trainingDataPath)
     val last = output.collect().last
 
     Avro2TF.run(session, avro2TFTrainingParamsEnableFilterZero)
@@ -198,26 +196,17 @@ class Avro2TFTest extends WithLocalSparkSession {
     assertTrue(new File(avro2TFTrainingParamsEnableFilterZero.workingDir.tensorMetadataPath).exists())
     assertTrue(new File(avro2TFTrainingParamsEnableFilterZero.workingDir.featureListPath).exists())
 
-    val outputFilterZero = IOUtils.readAvro(session, getAvroFiles(avro2TFTrainingParamsEnableFilterZero.workingDir.trainingDataPath): _*)
+    val outputFilterZero = IOUtils.readAvro(session, avro2TFTrainingParamsEnableFilterZero.workingDir.trainingDataPath)
     val lastFilterZero = outputFilterZero.collect().last
 
     assertEquals(last.schema, lastFilterZero.schema)
 
-    val sparseVectorIndices = last.schema.filter(elem => CommonUtils.isSparseVector(elem.dataType)).map(last.schema.indexOf(_))
+    val sparseVectorNames = last.schema.filter(elem => CommonUtils.isSparseVector(elem.dataType)).map(_.name)
 
-    sparseVectorIndices.foreach {
-      index =>
-        assertFalse(last.get(index).asInstanceOf[GenericRowWithSchema].get(1).asInstanceOf[mutable.WrappedArray[Float]].filter(_ == 0.0).isEmpty)
-        assertTrue(lastFilterZero.get(index).asInstanceOf[GenericRowWithSchema].get(1).asInstanceOf[mutable.WrappedArray[Float]].filter(_ == 0.0).isEmpty)
-    }
-  }
-
-  def getAvroFiles(directory: String): List[String] = {
-    val d = new File(directory)
-    if (d.exists && d.isDirectory) {
-      d.listFiles.filter(_.isFile).map(_.getAbsolutePath).filter(_.endsWith("avro")).toList
-    } else {
-      List()
+    sparseVectorNames.foreach {
+      name =>
+        assertFalse(last.getAs[Row](name).getAs[Row](1).asInstanceOf[Seq[Float]].filter(_ == 0.0).isEmpty)
+        assertTrue(lastFilterZero.getAs[Row](name).getAs[Row](1).asInstanceOf[Seq[Float]].filter(_ == 0.0).isEmpty)
     }
   }
 }
