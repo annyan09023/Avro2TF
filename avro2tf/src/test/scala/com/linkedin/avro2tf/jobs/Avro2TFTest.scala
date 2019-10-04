@@ -205,8 +205,8 @@ class Avro2TFTest extends WithLocalSparkSession {
 
     sparseVectorNames.foreach {
       name =>
-        assertFalse(last.getAs[Row](name).getAs[Row](1).asInstanceOf[Seq[Float]].filter(_ == 0.0).isEmpty)
-        assertTrue(lastFilterZero.getAs[Row](name).getAs[Row](1).asInstanceOf[Seq[Float]].filter(_ == 0.0).isEmpty)
+        assertFalse(last.getAs[Row](name).getAs[Seq[Float]](1).filter(_ == 0.0).isEmpty)
+        assertTrue(lastFilterZero.getAs[Row](name).getAs[Seq[Float]](1).filter(_ == 0.0).isEmpty)
     }
   }
 }
